@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<modification>
+  <name>Bena Secure Admin Login v2</name>
+  <code>BenaSALV2</code>
+  <version>3.x.x</version>
+  <author><![CDATA[<font color="coral"><b>ABenkorich @ Bena.dev</b></font>]]></author>
+  <link>https://bena.dev</link>
+
+  <file path="admin/controller/common/login.php">
+	<operation error="skip" info="">
+      <search index="0" ><![CDATA[
+        $this->load->language('common/login');
+      ]]></search>
+      <add position="after"><![CDATA[
+        
+        $config_admin_secure_link = $this->config->get('config_admin_secure_link');
+		$params = trim($config_admin_secure_link['params'] ? : '');
+		$key =  trim($config_admin_secure_link['key'] ? : '');
+		$admin_url = empty($params) ? '' : ($admin_url = '&' . $params . '=' . $key );
+
+		if (isset($params) && $this->request->get[$params] != $key) {
+			$this->response->redirect( HTTPS_CATALOG .'not_found');
+		}
+      ]]></add>
+    </operation>
+    <operation error="skip" info="">
+      <search index="0" ><![CDATA[
+        $data['action'] = $this->url->link('common/login', '', true);
+      ]]></search>
+      <add position="replace"><![CDATA[
+        $data['action'] = $this->url->link('common/login', '', true) . $admin_url;
+      ]]></add>
+    </operation>
+  </file>
+  
+  <file path="admin/controller/setting/setting.php">
+	<operation error="skip" info="">
+      <search index="0" ><![CDATA[
+        if (isset($this->request->post['config_encryption'])) {
+      ]]></search>
+      <add position="before"><![CDATA[
+      $data['site_url'] = HTTP_SERVER; 
+      if (isset($this->request->post['config_admin_lecure_link'])) {
+        $data['config_admin_secure_link'] = $this->request->post['config_admin_secure_link'];
+      } else {
+        $data['config_admin_secure_link'] = $this->config->get('config_admin_secure_link');
+      }
+      ]]></add>
+    </operation>
+  </file>
+  <file path="admin/language/*/setting/setting.php">
+	<operation error="skip" info="">
+      <search index="0" ><![CDATA[
+        <?php
+      ]]></search>
+      <add position="after"><![CDATA[
+        $_['entry_admin_secure_link']   = 'Admin Secure Link';
+        $_['entry_admin_secure_params'] = 'Admin Secure Parameters';
+		    $_['help_admin_lecure_params']    = 'Set the Key to protect your Admin URL preventing unauthorized entry.<br /><b><i> CAUTION !! </b></i><br />Your Admin URL will be changed to this format: http://yourdomain.com/admin/?PARAMS=KEY';
+        $_['entry_url_params']          = 'URL Parameter';
+        $_['entry_url_key']             = 'URL Key';
+      ]]></add>
+    </operation>
+  </file>
+  <file path="admin/view/template/setting/setting.twig">
+	<operation error="skip" info="">
+      <search index="0" ><![CDATA[
+        <label class="col-sm-2 control-label" for="input-encryption"><span data-toggle="tooltip" title="{{ help_encryption }}">{{ entry_encryption }}</span></label>
+      ]]></search>
+      <add position="before" offset="1" ><![CDATA[
+      <div class="form-group" style="background-color: #ffcb6c;">
+        <label class="col-sm-2 control-label"><span data-toggle="tooltip" title="{{ help_admin_lecure_params }}">{{ entry_admin_secure_params }}</label>
+        <div class="col-sm-5">
+            <input type="text" autocomplete="off" name="config_admin_secure_link[params]" value="{{ config_admin_secure_link.params|trim }}" id="admin-secure-link-params" class="form-control" placeholder="{{ entry_url_params }}"/>
+        </div>
+        <div class="col-sm-5">
+            <input type="text" autocomplete="off" name="config_admin_secure_link[key]" value="{{ config_admin_secure_link.key|trim }}" id="admin-secure-link-key" class="form-control" placeholder="{{ entry_url_key }}"/>
+        </div>
+		<div style="" class="col-sm-12">
+        	<label class="col-sm-2 control-label">{{ entry_admin_secure_link }}</label>
+          <span class="col-sm-10 control-label"  id='demo-url' style="font-weight: bold;font-style: italic;color: red; text-align: left;"></span>
+        </div>
+      </div>
+      ]]></add>
+    </operation>
+    <operation error="skip" info="">
+      <search index="0" ><![CDATA[
+      <script type="text/javascript"><!--
+      ]]></search>
+      <add position="after" offset="0" ><![CDATA[
+      $( document ).ready(function() {
+        $('#demo-url').text ( '{{site_url}}index.php?' + $('#admin-secure-link-params').val() + '=' + $('#admin-secure-link-key').val());
+      });
+      $('#admin-secure-link-params, #admin-secure-link-key').on('keyup', function() {
+        console.log('changed', $('#admin-secure-link-params').val());
+        $('#demo-url').text ( '{{site_url}}index.php?' + $('#admin-secure-link-params').val() + '=' + $('#admin-secure-link-key').val());
+      });
+      ]]></add>
+    </operation>
+  </file>
+
+</modification>
